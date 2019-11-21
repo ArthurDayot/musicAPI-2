@@ -13,8 +13,11 @@ Python installed.
 Flask installed.
 
 Commands (in order) to run to start:
+
 export FLASK_APP=playlist.py
+
 flask init
+
 foreman start
 
 How to run a shell script:
