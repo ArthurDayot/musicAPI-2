@@ -1,4 +1,4 @@
-#from flask import Flask, jsonify
+from flask import Flask, jsonify
 #app = Flask(__name__)
 
 import sys
@@ -6,11 +6,23 @@ import flask_api
 from flask import request, jsonify
 from flask_api import status, exceptions
 import pugsql
+import uuid
+import sqlite3
+
 app = flask_api.FlaskAPI(__name__)
 app.config.from_envvar('APP_CONFIG')
 queries = pugsql.module('queries/')
-queries.connect(app.config['DATABASE_URL'])
+querie2 = pugsql.module('queries/')
+queries3 = pugsql.module('queries/')
+queries4 = pugsql.module('queries/')
 
+queries.connect(app.config['DATABASE_URL'])
+queries2.connect(app.config['DATABASE_URL2'])
+queries3.connect(app.config['DATABASE_URL3'])
+queries4.connect(app.config['DATABASE_URL4'])
+
+sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
 
 @app.cli.command('init')
 def init_db():
@@ -31,12 +43,12 @@ def home():
 def all_tracks():
     all_tracks = queries.all_tracks()
     return list(all_tracks)
-    
+
 #GET track that matches id number
 @app.route('/api/resources/tracks/<int:id>', methods=['GET'])
 def track(id):
     return queries.track_by_id(id=id)
-        
+
 @app.route('/api/resources/tracks', methods=['GET', 'POST'])
 def tracks():
     if request.method == 'GET':
@@ -47,17 +59,17 @@ def tracks():
 @app.route('/api/resources/tracks/update', methods=['GET','PUT'])
 def updates():
     if request.method == 'GET':
-        return (list(queries.all_tracks())) 
+        return (list(queries.all_tracks()))
     if request.method == 'PUT':
-        return update_track(request.data)   
-        
+        return update_track(request.data)
+
 @app.route('/api/resources/tracks/delete/<int:id>', methods=['GET','DELETE'])
 def deletes(id):
     if request.method =='GET':
-        return (list(queries.all_tracks())) 
+        return (list(queries.all_tracks()))
     if request.method == 'DELETE':
         return delete_track(id)
-        
+
 def delete_track(id):
     track_to_delete = id
     filter_query =[]
@@ -82,7 +94,7 @@ def create_track(track):
         track['id'] = queries.create_track(**track)
     except Exception as e:
         return { 'error': str(e) }, status.HTTP_409_CONFLICT
-        
+
     return track, status.HTTP_201_CREATED
 
 #PUT Method - Requires 'id' or 'artist title'
@@ -91,7 +103,7 @@ def update_track(track):
     search_by_unique_constraint = ['columnName','columnValue','title', 'artist']
     track = request.data
     to_filter = []
-    
+
 #{"changeColumn":"title","changeValueTo":"Yellow Submarine", "artist": "The Beatles","title":"old song"}
     if 'changeColumn' in track and 'changeValueTo' in track and 'title' in track and 'artist' in track:
         title = track['title']
@@ -110,9 +122,9 @@ def update_track(track):
         to_filter.append(track['changeValueTo'])
         to_filter.append(track['id'])
         queries._engine.execute(query,to_filter)
-    return track, status.HTTP_201_CREATED   
+    return track, status.HTTP_201_CREATED
 
- 
+
 #Search for track based off given parameter
 def filter_tracks(query_parameters):
     id = query_parameters.get('id')
@@ -122,7 +134,7 @@ def filter_tracks(query_parameters):
     #duration = query_parameters.get('duration')
     #url = query_parameters.get('url')
     #arturl = query_parameters.get('arturl')
-    
+
     query = "SELECT * FROM tracks WHERE"
     to_filter = []
 
@@ -134,7 +146,7 @@ def filter_tracks(query_parameters):
         to_filter.append(title)
     if album:
         query += ' album=? AND'
-        to_filter.append(album) 
+        to_filter.append(album)
     if not (id or title or album or artist):
         raise exceptions.NotFound()
     query = query[:-4] + ';'
@@ -144,5 +156,4 @@ def filter_tracks(query_parameters):
     #return results
     #return list(results)
     return list(map(dict, results))
-    
 
