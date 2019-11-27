@@ -102,6 +102,8 @@ def create_track(track):
         id = uuid.uuid4()
         track['id'] = queries.create_track(**track)
 
+        import pprint
+        pprint.pprint(track)
         if int(id) % 3 == 0:
                 queries2.create_track(**track)
         elif int(id) % 3 == 1:
@@ -173,4 +175,3 @@ def filter_tracks(query_parameters):
     #return results
     #return list(results)
     return list(map(dict, results))
-
