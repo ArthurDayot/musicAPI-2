@@ -28,7 +28,7 @@ def home():
 def playlist_selection(id):
     to_filter = []
     to_filter.append(id)
-    query = "SELECT * FROM playlist WHERE userid=?"
+    query = "SELECT * FROM playlist WHERE id=?"
     results = queries._engine.execute(query, to_filter).fetchall()
     return list(map(dict, results))
    
