@@ -24,7 +24,7 @@ queries4.connect(app.config['DATABASE_URL4'])
 def init_db():
     with app.app_context():
         db = queries._engine.raw_connection()
-        with app.open_resource('musicdb.sql', mode='r') as f:
+        with app.open_resource('createdb.sql', mode='r') as f:
             db.cursor().executescript(f.read())
         db.commit()
 
