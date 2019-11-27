@@ -24,6 +24,18 @@ queries4.connect(app.config['DATABASE_URL4'])
 sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
 sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
 
+@app.cli.command('init')
+def init_db():
+    with app.app_context():
+        db = queries._engine.raw_connection()
+        with app.open_resource('tracksdb1.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        with app.open_resource('tracksdb2.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        with app.open_resource('tracksdb3.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
+
 @app.route('/', methods=['GET'])
 def home():
     return '''<h1>SPOTIFY, but without music streaming</h1>
@@ -161,3 +173,4 @@ def filter_tracks(query_parameters):
     #return results
     #return list(results)
     return list(map(dict, results))
+
