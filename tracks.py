@@ -12,7 +12,7 @@ import sqlite3
 app = flask_api.FlaskAPI(__name__)
 app.config.from_envvar('APP_CONFIG')
 queries = pugsql.module('queries/')
-querie2 = pugsql.module('queries/')
+queries2 = pugsql.module('queries/')
 queries3 = pugsql.module('queries/')
 queries4 = pugsql.module('queries/')
 
