@@ -24,15 +24,6 @@ queries4.connect(app.config['DATABASE_URL4'])
 sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
 sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
 
-@app.cli.command('init')
-def init_db():
-    with app.app_context():
-        db = queries._engine.raw_connection()
-        with app.open_resource('createdb.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
-
-
 @app.route('/', methods=['GET'])
 def home():
     return '''<h1>SPOTIFY, but without music streaming</h1>
@@ -47,7 +38,12 @@ def all_tracks():
 #GET track that matches id number
 @app.route('/api/resources/tracks/<int:id>', methods=['GET'])
 def track(id):
-    return queries.track_by_id(id=id)
+    if id % 3 == 0:
+        return queries.track_by_id(id=id)
+    elif id % 3 == 1:
+        return queries2.track_by_id(id=id)
+    elif id % 3 == 2:
+        return querie3.track_by_id(id=id)
 
 @app.route('/api/resources/tracks', methods=['GET', 'POST'])
 def tracks():
@@ -74,7 +70,7 @@ def delete_track(id):
     track_to_delete = id
     filter_query =[]
     try:
-        query = "DELETE FROM tracks WHERE id=?"
+        query = "DELETE FROM tracks WHERE uuid=?"
         filter_query.append(track_to_delete)
         queries._engine.execute(query,filter_query)
     except Exception as e:
@@ -91,7 +87,16 @@ def create_track(track):
     if not all([field in track for field in required_fields]):
         raise exceptions.ParseError()
     try:
+        id = uuid.uuid4()
         track['id'] = queries.create_track(**track)
+
+        if int(id) % 3 == 0:
+                queries2.create_track(**track)
+        elif int(id) % 3 == 1:
+                queries3.create_track(**track)
+        elif int(id) % 3 == 2:
+                queries4.create_track(**track)
+
     except Exception as e:
         return { 'error': str(e) }, status.HTTP_409_CONFLICT
 
@@ -115,10 +120,10 @@ def update_track(track):
         to_filter.append(title)
         to_filter.append(artist)
         queries._engine.execute(query,to_filter)
-#{"changeColumn":"title","changeValueTo":"Yellow Submarine","id":"2"}
+#{"changeColumn":"title","changeValueTo":"Yellow Submarine","uuid":"2"}
     elif 'changeColumn' in track and 'changeValueTo' in track and 'id' in track:
         columnName = track['changeColumn']
-        query = "UPDATE tracks SET {}=? WHERE id =?".format(columnName)
+        query = "UPDATE tracks SET {}=? WHERE uuid =?".format(columnName)
         to_filter.append(track['changeValueTo'])
         to_filter.append(track['id'])
         queries._engine.execute(query,to_filter)
@@ -139,7 +144,7 @@ def filter_tracks(query_parameters):
     to_filter = []
 
     if id:
-        query += ' id=? AND'
+        query += ' uuid=? AND'
         to_filter.append(id)
     if title:
         query += ' title=? AND'
@@ -156,4 +161,3 @@ def filter_tracks(query_parameters):
     #return results
     #return list(results)
     return list(map(dict, results))
-
